@@ -7,10 +7,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,7 +14,16 @@ jobs:
           node-version: '18'
       - run: npm install
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-      - uses: actions/deploy-pages@v4
+      - name: Deploy to gh-pages
+        run: |
+          git config user.email "bot@example.com"
+          git config user.name "Deploy Bot"
+          git worktree add gh-pages-deploy gh-pages || git worktree add gh-pages-deploy -b gh-pages HEAD
+          rm -rf gh-pages-deploy/*
+          cp -r dist/* gh-pages-deploy/
+          cd gh-pages-deploy
+          git add .
+          git commit -m "Deploy from main" || true
+          git push origin gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
